@@ -1,3 +1,11 @@
 <resources>
     <string name="app_name">TBCheck</string>
+
+    <string name="str_choose_image">Choose Image</string>
+    <string name="str_viewing_image">Viewing image</string>
+    <string name="str_image_placement">Image placement</string>
+    <string name="str_switching_camera">Switching Camera</string>
+    <string name="str_failed_take_a_pict">Failed take a pict</string>
+    <string name="str_didnt_have_permission">Permission denied.</string>
+    <string name="str_failed_to_open_camera">Failed to open camera</string>
 </resources>
