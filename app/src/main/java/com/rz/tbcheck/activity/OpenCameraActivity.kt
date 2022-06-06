@@ -82,7 +82,7 @@ class OpenCameraActivity : AppCompatActivity() {
                         "isBackCamera",
                         cameraSelector == CameraSelector.DEFAULT_BACK_CAMERA
                     )
-                    setResult(MainActivity.CAMERA_X_RESULT, intent)
+                    setResult(MainActivity.SELECT_IMAGE_RESULT, intent)
                     finish()
                 }
             }

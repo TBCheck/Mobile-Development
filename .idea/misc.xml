@@ -7,6 +7,8 @@
         <entry key="app/src/main/res/drawable/bg_button_gradient.xml" value="0.1" />
         <entry key="app/src/main/res/drawable/ic_baseline_image_24.xml" value="0.153" />
         <entry key="app/src/main/res/drawable/ic_change_camera.xml" value="0.1" />
+        <entry key="app/src/main/res/drawable/ic_shutter.xml" value="0.111" />
+        <entry key="app/src/main/res/layout/activity_camera.xml" value="0.225" />
         <entry key="app/src/main/res/layout/activity_main.xml" value="0.33" />
         <entry key="app/src/main/res/layout/activity_open_camera.xml" value="0.225" />
         <entry key="app/src/main/res/layout/activity_splash_screen.xml" value="0.2125" />

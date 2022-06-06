@@ -8,4 +8,6 @@
     <string name="str_failed_take_a_pict">Failed take a pict</string>
     <string name="str_didnt_have_permission">Permission denied.</string>
     <string name="str_failed_to_open_camera">Failed to open camera</string>
+    <string name="str_logo">Logo</string>
+    <string name="str_check">Check</string>
 </resources>
