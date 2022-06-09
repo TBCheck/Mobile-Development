@@ -5,18 +5,25 @@ import android.content.ContentValues.TAG
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.ImageDecoder
 import android.graphics.drawable.BitmapDrawable
+import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.MediaStore
 import android.util.Log
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.rz.tbcheck.R
+import com.rz.tbcheck.config.rotateBitmap
 import com.rz.tbcheck.databinding.ActivityMainBinding
 import com.rz.tbcheck.ml.Model
 import com.rz.tbcheck.viewmodel.MainViewModel
@@ -29,15 +36,17 @@ import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
-
+import java.util.concurrent.Executors
 
 class MainActivity : AppCompatActivity() {
 
+    private var getFile: File? = null
     private val mainViewModel: MainViewModel by viewModels()
-    private lateinit var binding: ActivityMainBinding
 
     private lateinit var bitmap: Bitmap
-    private var getFile: File? = null
+    private lateinit var binding: ActivityMainBinding
+
+    private var isHaveImage = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,11 +54,19 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         setClick()
+
+        mainViewModel.floatArrayResult.observe(this) {
+            Log.d(TAG, "onCreate: " + it[0])
+        }
+
+        mainViewModel.isLoading.observe(this) {
+            if (!it) binding.btnCheck.isEnabled = true
+        }
     }
 
     private fun setClick() {
         binding.apply {
-            btnPickImage.setOnClickListener {
+            ivImage.setOnClickListener {
                 if (!allPermissionsGranted()) {
                     ActivityCompat.requestPermissions(
                         this@MainActivity,
@@ -57,37 +74,56 @@ class MainActivity : AppCompatActivity() {
                         REQUEST_CODE_PERMISSIONS
                     )
                 } else {
-                    val intent = Intent()
-                    intent.type = "image/*"
-                    intent.action = Intent.ACTION_GET_CONTENT
-                    launchForResult.launch(intent)
-//                    val intent = Intent(this@MainActivity, OpenCameraActivity::class.java)
+                    showDialog()
                 }
             }
 
             btnCheck.setOnClickListener {
-//                val image = imageToBitmap(ivImage)
-                val model = Model.newInstance(this@MainActivity)
-
-                // Creates inputs for reference.
-                inputImageBuffer = TensorImage(DataType.FLOAT32)
-                inputImageBuffer = loadImage(bitmap)
-                val inputFeature0 =
-                    TensorBuffer.createFixedSize(intArrayOf(1, 227, 227, 3), DataType.FLOAT32)
-                inputFeature0.loadBuffer(inputImageBuffer.buffer)
-
-                Log.d("shape", inputFeature0.buffer.toString())
-
-
-                // Runs model inference and gets result.
-                val outputs = (model.process(inputFeature0))
-                val outputFeature0 = outputs.outputFeature0AsTensorBuffer.floatArray
-
-                Log.d(TAG, "setClick: ${outputFeature0[0]}")
-                // Releases model resources if no longer used.
-                model.close()
+                if (isHaveImage) {
+                    val model = Model.newInstance(this@MainActivity)
+                    mainViewModel.checkIt(model, bitmap)
+                    btnCheck.isEnabled = false
+                } else {
+                    Toast.makeText(
+                        this@MainActivity,
+                        "You must have to choose image.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    showDialog()
+                }
             }
         }
+    }
+
+    private fun showDialog() {
+        // setup the alert builder
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("Choose media:")
+
+        // add a list
+        val listMedia = arrayOf(
+            resources.getString(R.string.str_take_using_camera),
+            resources.getString(R.string.str_pick_from_gallery)
+        )
+
+        builder.setItems(listMedia) { _, which ->
+            when (which) {
+                0 -> {
+                    val intent = Intent(this@MainActivity, OpenCameraActivity::class.java)
+                    launchForResult.launch(intent)
+                }
+                1 -> {
+                    val intent = Intent()
+                    intent.type = "image/*"
+                    intent.action = Intent.ACTION_GET_CONTENT
+                    launchForResult.launch(intent)
+                }
+            }
+        }
+
+        // create and show the alert dialog
+        val dialog = builder.create()
+        dialog.show()
     }
 
     private lateinit var inputImageBuffer: TensorImage
@@ -97,21 +133,13 @@ class MainActivity : AppCompatActivity() {
 
         // Creates processor for the TensorImage.
         val cropSize = Math.min(bitmap.width, bitmap.height)
+
         // TODO(b/143564309): Fuse ops inside ImageProcessor.
         val imageProcessor: ImageProcessor = ImageProcessor.Builder()
             .add(ResizeWithCropOrPadOp(cropSize, cropSize))
             .add(ResizeOp(227, 227, ResizeOp.ResizeMethod.NEAREST_NEIGHBOR))
             .build()
         return imageProcessor.process(inputImageBuffer)
-    }
-
-    private fun imageToBitmap(image: ImageView): ByteArray {
-        val bitmap = (image.drawable as BitmapDrawable).bitmap
-        val bitmap2 = Bitmap.createScaledBitmap(bitmap, 227, 227, true)
-        val stream = ByteArrayOutputStream()
-        bitmap2.compress(Bitmap.CompressFormat.PNG, 90, stream)
-
-        return stream.toByteArray()
     }
 
     override fun onRequestPermissionsResult(
@@ -139,23 +167,34 @@ class MainActivity : AppCompatActivity() {
     private val launchForResult = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) {
-        if (it.resultCode == RESULT_OK) {
-            /*val myFile = it.data?.getSerializableExtra("picture") as File
+        if (it.resultCode == TAKE_IMAGE_RESULT) {
+            val myFile = it.data?.getSerializableExtra("picture") as File
             val isBackCamera = it.data?.getBooleanExtra("isBackCamera", true) as Boolean
 
             getFile = myFile
-            val result = rotateBitmap(
+            bitmap = rotateBitmap(
                 BitmapFactory.decodeFile(getFile?.path),
                 isBackCamera
             )
 
-            binding.ivImage.setImageBitmap(result)
-            */
+            binding.ivImage.setImageBitmap(bitmap)
+            isHaveImage = true
+        } else {
+            val imageUri = it.data?.data
 
-            val imageuri = it.data?.getData()
+            bitmap = if (Build.VERSION.SDK_INT < 28) {
+                MediaStore.Images.Media.getBitmap(
+                    this.contentResolver,
+                    imageUri
+                )
+            } else {
+                val source = ImageDecoder.createSource(this.contentResolver, imageUri!!)
+                ImageDecoder.decodeBitmap(source)
+            }
+
             try {
-                bitmap = MediaStore.Images.Media.getBitmap(contentResolver, imageuri)
                 binding.ivImage.setImageBitmap(bitmap)
+                isHaveImage = true
             } catch (e: IOException) {
                 e.printStackTrace()
             }
@@ -163,7 +202,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     companion object {
-        const val SELECT_IMAGE_RESULT = 200
+        const val TAKE_IMAGE_RESULT = 201
 
         private val REQUIRED_PERMISSIONS = arrayOf(Manifest.permission.CAMERA)
         private const val REQUEST_CODE_PERMISSIONS = 10

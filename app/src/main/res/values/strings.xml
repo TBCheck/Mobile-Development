@@ -10,4 +10,8 @@
     <string name="str_failed_to_open_camera">Failed to open camera</string>
     <string name="str_logo">Logo</string>
     <string name="str_check">Check</string>
+
+    <string name="str_take_using_camera">Camera</string>
+    <string name="str_pick_from_gallery">Gallery</string>
+    <string name="str_tap_to_choose_change_image">Tap to choose/change image</string>
 </resources>
