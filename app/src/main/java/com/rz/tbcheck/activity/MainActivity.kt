@@ -21,13 +21,16 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.toBitmap
 import com.rz.tbcheck.R
-import com.rz.tbcheck.config.rotateBitmap
+import com.rz.tbcheck.data.ApiResponse
 import com.rz.tbcheck.databinding.ActivityMainBinding
 import com.rz.tbcheck.ml.Model
 import com.rz.tbcheck.viewmodel.MainViewModel
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
+
 
 class MainActivity : AppCompatActivity() {
 
@@ -48,15 +51,16 @@ class MainActivity : AppCompatActivity() {
 
         mainViewModel.floatArrayResult.observe(this) {
             Log.d(TAG, "onCreate: " + it[0])
+            val intent = Intent(this, DetailHistoryActivity::class.java)
+            intent.putExtra("from", "1")
+            intent.putExtra("data", ApiResponse.IntentSend(it[0]))
+            startActivity(intent)
         }
 
         mainViewModel.isLoading.observe(this) {
             if (!it) {
                 binding.btnCheck.isEnabled = true
                 binding.llProcess.visibility = View.GONE
-
-                val intent = Intent(this, DetailHistoryActivity::class.java)
-                startActivity(intent)
             }
         }
 
@@ -136,13 +140,11 @@ class MainActivity : AppCompatActivity() {
         if (it.resultCode == TAKE_IMAGE_RESULT) {
             try {
                 val myFile = it.data?.getSerializableExtra("picture") as File
-                val isBackCamera = it.data?.getBooleanExtra("isBackCamera", true) as Boolean
 
                 getFile = myFile
-                bitmap = rotateBitmap(
-                    BitmapFactory.decodeFile(getFile?.path),
-                    isBackCamera
-                )
+                bitmap = BitmapFactory.decodeFile(getFile?.path)
+
+                Log.d(TAG, "masuk: ")
 
                 binding.ivImage.setImageBitmap(bitmap)
                 binding.tvDescChoose.visibility = View.GONE

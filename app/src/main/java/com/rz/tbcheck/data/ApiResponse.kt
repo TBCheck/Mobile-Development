@@ -1,5 +1,6 @@
 package com.rz.tbcheck.data
 
+import android.graphics.Bitmap
 import android.os.Parcelable
 import com.google.gson.annotations.SerializedName
 import kotlinx.parcelize.Parcelize
@@ -17,5 +18,10 @@ class ApiResponse {
         val accuracy: Double,
         @field:SerializedName("photoUrl")
         val photoUrl: String? = null,
+    ) : Parcelable
+
+    @Parcelize
+    data class IntentSend(
+        val accuracy: Float,
     ) : Parcelable
 }
