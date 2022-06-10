@@ -14,4 +14,13 @@
     <string name="str_take_using_camera">Camera</string>
     <string name="str_pick_from_gallery">Gallery</string>
     <string name="str_tap_to_choose_change_image">Tap to choose/change image</string>
+    <string name="str_please_do_not_close_application_until_process_has_done">Please do not close application until process has done.</string>
+    <string name="str_checking">Checking...</string>
+    <string name="str_date">Date</string>
+    <string name="str_accuracy">Accuracy</string>
+    <string name="str_status">Status</string>
+    <string name="str_colon">:</string>
+    <string name="str_history">History</string>
+    <string name="str_normal">Normal</string>
+    <string name="str_image">Image</string>
 </resources>

@@ -7,14 +7,13 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.ImageDecoder
-import android.graphics.drawable.BitmapDrawable
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.provider.MediaStore
 import android.util.Log
-import android.widget.ImageView
+import android.view.Menu
+import android.view.MenuItem
+import android.view.View
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
@@ -27,26 +26,18 @@ import com.rz.tbcheck.config.rotateBitmap
 import com.rz.tbcheck.databinding.ActivityMainBinding
 import com.rz.tbcheck.ml.Model
 import com.rz.tbcheck.viewmodel.MainViewModel
-import org.tensorflow.lite.DataType
-import org.tensorflow.lite.support.image.ImageProcessor
-import org.tensorflow.lite.support.image.TensorImage
-import org.tensorflow.lite.support.image.ops.ResizeOp
-import org.tensorflow.lite.support.image.ops.ResizeWithCropOrPadOp
-import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
-import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
-import java.util.concurrent.Executors
 
 class MainActivity : AppCompatActivity() {
 
+    private var isHaveImage = false
     private var getFile: File? = null
     private val mainViewModel: MainViewModel by viewModels()
 
     private lateinit var bitmap: Bitmap
     private lateinit var binding: ActivityMainBinding
-
-    private var isHaveImage = false
+    private lateinit var dialog: AlertDialog
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -60,8 +51,16 @@ class MainActivity : AppCompatActivity() {
         }
 
         mainViewModel.isLoading.observe(this) {
-            if (!it) binding.btnCheck.isEnabled = true
+            if (!it) {
+                binding.btnCheck.isEnabled = true
+                binding.llProcess.visibility = View.GONE
+
+                val intent = Intent(this, DetailHistoryActivity::class.java)
+                startActivity(intent)
+            }
         }
+
+        initialDialog()
     }
 
     private fun setClick() {
@@ -74,7 +73,7 @@ class MainActivity : AppCompatActivity() {
                         REQUEST_CODE_PERMISSIONS
                     )
                 } else {
-                    showDialog()
+                    dialog.show()
                 }
             }
 
@@ -82,20 +81,22 @@ class MainActivity : AppCompatActivity() {
                 if (isHaveImage) {
                     val model = Model.newInstance(this@MainActivity)
                     mainViewModel.checkIt(model, bitmap)
+
                     btnCheck.isEnabled = false
+                    llProcess.visibility = View.VISIBLE
                 } else {
+                    dialog.show()
                     Toast.makeText(
                         this@MainActivity,
                         "You must have to choose image.",
                         Toast.LENGTH_LONG
                     ).show()
-                    showDialog()
                 }
             }
         }
     }
 
-    private fun showDialog() {
+    private fun initialDialog() {
         // setup the alert builder
         val builder = AlertDialog.Builder(this)
         builder.setTitle("Choose media:")
@@ -122,24 +123,52 @@ class MainActivity : AppCompatActivity() {
         }
 
         // create and show the alert dialog
-        val dialog = builder.create()
-        dialog.show()
+        dialog = builder.create()
     }
 
-    private lateinit var inputImageBuffer: TensorImage
-    private fun loadImage(bitmap: Bitmap): TensorImage {
-        // Loads bitmap into a TensorImage.
-        inputImageBuffer.load(bitmap)
+    private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
+        ContextCompat.checkSelfPermission(baseContext, it) == PackageManager.PERMISSION_GRANTED
+    }
 
-        // Creates processor for the TensorImage.
-        val cropSize = Math.min(bitmap.width, bitmap.height)
+    private val launchForResult = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) {
+        if (it.resultCode == TAKE_IMAGE_RESULT) {
+            try {
+                val myFile = it.data?.getSerializableExtra("picture") as File
+                val isBackCamera = it.data?.getBooleanExtra("isBackCamera", true) as Boolean
 
-        // TODO(b/143564309): Fuse ops inside ImageProcessor.
-        val imageProcessor: ImageProcessor = ImageProcessor.Builder()
-            .add(ResizeWithCropOrPadOp(cropSize, cropSize))
-            .add(ResizeOp(227, 227, ResizeOp.ResizeMethod.NEAREST_NEIGHBOR))
-            .build()
-        return imageProcessor.process(inputImageBuffer)
+                getFile = myFile
+                bitmap = rotateBitmap(
+                    BitmapFactory.decodeFile(getFile?.path),
+                    isBackCamera
+                )
+
+                binding.ivImage.setImageBitmap(bitmap)
+                binding.tvDescChoose.visibility = View.GONE
+                isHaveImage = true
+            } catch (e: IOException) {
+                e.printStackTrace()
+            }
+        } else {
+            if (it.data != null) {
+                val imageUri = it.data?.data
+
+                bitmap = if (Build.VERSION.SDK_INT < 28) {
+                    MediaStore.Images.Media.getBitmap(
+                        this.contentResolver,
+                        imageUri
+                    )
+                } else {
+                    val source = ImageDecoder.createSource(this.contentResolver, imageUri!!)
+                    ImageDecoder.decodeBitmap(source)
+                }
+
+                binding.ivImage.setImageBitmap(bitmap)
+                binding.tvDescChoose.visibility = View.GONE
+                isHaveImage = true
+            }
+        }
     }
 
     override fun onRequestPermissionsResult(
@@ -160,44 +189,20 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
-        ContextCompat.checkSelfPermission(baseContext, it) == PackageManager.PERMISSION_GRANTED
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        val inflater = menuInflater
+        inflater.inflate(R.menu.option_main_menu, menu)
+        return true
     }
 
-    private val launchForResult = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) {
-        if (it.resultCode == TAKE_IMAGE_RESULT) {
-            val myFile = it.data?.getSerializableExtra("picture") as File
-            val isBackCamera = it.data?.getBooleanExtra("isBackCamera", true) as Boolean
-
-            getFile = myFile
-            bitmap = rotateBitmap(
-                BitmapFactory.decodeFile(getFile?.path),
-                isBackCamera
-            )
-
-            binding.ivImage.setImageBitmap(bitmap)
-            isHaveImage = true
-        } else {
-            val imageUri = it.data?.data
-
-            bitmap = if (Build.VERSION.SDK_INT < 28) {
-                MediaStore.Images.Media.getBitmap(
-                    this.contentResolver,
-                    imageUri
-                )
-            } else {
-                val source = ImageDecoder.createSource(this.contentResolver, imageUri!!)
-                ImageDecoder.decodeBitmap(source)
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.menu_history -> {
+                val intent = Intent(this, HistoryActivity::class.java)
+                startActivity(intent)
+                true
             }
-
-            try {
-                binding.ivImage.setImageBitmap(bitmap)
-                isHaveImage = true
-            } catch (e: IOException) {
-                e.printStackTrace()
-            }
+            else -> true
         }
     }
 
