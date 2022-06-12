@@ -30,33 +30,24 @@
     </RelativeLayout>
 
     <Button
-        android:id="@+id/btnPickImage"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:background="@drawable/bg_button"
-        android:text="@string/str_choose_image"
-        android:textColor="@color/color_on_primary"
-        android:visibility="gone" />
-
-    <Button
         android:id="@+id/btnCheck"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="32dp"
         android:background="@drawable/bg_button"
+        android:elevation="8dp"
         android:text="@string/str_check"
         android:textColor="@color/color_on_primary" />
 
     <androidx.appcompat.widget.LinearLayoutCompat
-        android:visibility="gone"
         android:id="@+id/llProcess"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:layout_marginTop="32dp"
         android:layout_marginEnd="16dp"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:visibility="gone">
 
         <ProgressBar
             android:id="@+id/pbMain"

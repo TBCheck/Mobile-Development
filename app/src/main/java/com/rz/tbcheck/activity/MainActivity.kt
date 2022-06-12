@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.ImageDecoder
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
@@ -21,13 +22,13 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.core.graphics.drawable.toBitmap
 import com.rz.tbcheck.R
-import com.rz.tbcheck.data.ApiResponse
+import com.rz.tbcheck.activity.DetailHistoryActivity.Companion.INTENT_FROM
+import com.rz.tbcheck.activity.DetailHistoryActivity.Companion.INTENT_FROM1
+import com.rz.tbcheck.data.IntentSend
 import com.rz.tbcheck.databinding.ActivityMainBinding
 import com.rz.tbcheck.ml.Model
 import com.rz.tbcheck.viewmodel.MainViewModel
-import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
 
@@ -42,6 +43,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var dialog: AlertDialog
 
+    private var filePath: Uri? = null
+    private var isLoading: Boolean = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -52,15 +56,18 @@ class MainActivity : AppCompatActivity() {
         mainViewModel.floatArrayResult.observe(this) {
             Log.d(TAG, "onCreate: " + it[0])
             val intent = Intent(this, DetailHistoryActivity::class.java)
-            intent.putExtra("from", "1")
-            intent.putExtra("data", ApiResponse.IntentSend(it[0]))
+            intent.putExtra(INTENT_FROM, "1")
+            intent.putExtra(INTENT_FROM1, IntentSend(it[0], filePath!!))
             startActivity(intent)
         }
 
         mainViewModel.isLoading.observe(this) {
             if (!it) {
                 binding.btnCheck.isEnabled = true
+                binding.ivImage.isEnabled = true
                 binding.llProcess.visibility = View.GONE
+
+                isLoading = false
             }
         }
 
@@ -87,6 +94,7 @@ class MainActivity : AppCompatActivity() {
                     mainViewModel.checkIt(model, bitmap)
 
                     btnCheck.isEnabled = false
+                    ivImage.isEnabled = false
                     llProcess.visibility = View.VISIBLE
                 } else {
                     dialog.show()
@@ -143,6 +151,7 @@ class MainActivity : AppCompatActivity() {
 
                 getFile = myFile
                 bitmap = BitmapFactory.decodeFile(getFile?.path)
+                filePath = it.data?.data
 
                 Log.d(TAG, "masuk: ")
 
@@ -154,15 +163,15 @@ class MainActivity : AppCompatActivity() {
             }
         } else {
             if (it.data != null) {
-                val imageUri = it.data?.data
+                filePath = it.data?.data
 
                 bitmap = if (Build.VERSION.SDK_INT < 28) {
                     MediaStore.Images.Media.getBitmap(
                         this.contentResolver,
-                        imageUri
+                        filePath
                     )
                 } else {
-                    val source = ImageDecoder.createSource(this.contentResolver, imageUri!!)
+                    val source = ImageDecoder.createSource(this.contentResolver, filePath!!)
                     ImageDecoder.decodeBitmap(source)
                 }
 
@@ -200,8 +209,10 @@ class MainActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.menu_history -> {
-                val intent = Intent(this, HistoryActivity::class.java)
-                startActivity(intent)
+                if (!isLoading) {
+                    val intent = Intent(this, HistoryActivity::class.java)
+                    startActivity(intent)
+                }
                 true
             }
             else -> true

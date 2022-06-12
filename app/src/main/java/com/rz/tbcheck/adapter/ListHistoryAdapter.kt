@@ -4,16 +4,16 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.rz.tbcheck.data.ApiResponse
+import com.rz.tbcheck.data.ListHistoryItem
 import com.rz.tbcheck.databinding.ItemHistoryBinding
 
-class ListHistoryAdapter(private val listHistory: ArrayList<ApiResponse.ListHistoryItem>) :
+class ListHistoryAdapter(private val listHistory: ArrayList<ListHistoryItem>) :
     RecyclerView.Adapter<ListHistoryAdapter.ListViewHolder>() {
 
     private lateinit var onItemClickCallback: OnItemClickCallback
 
     interface OnItemClickCallback {
-        fun onItemClicked(data: ApiResponse.ListHistoryItem)
+        fun onItemClicked(data: ListHistoryItem)
     }
 
     fun setOnItemClickCallback(onItemClickCallback: OnItemClickCallback) {
@@ -32,11 +32,18 @@ class ListHistoryAdapter(private val listHistory: ArrayList<ApiResponse.ListHist
         val history = listHistory[position]
 
         holder.binding.apply {
-            (history.status + "(" + history.accuracy + ")").also { tvStatus.text = it }
-            tvDate.text = history.date
+
+            val percent = if (history.accuracy?.substring(3) == ".")
+                history.accuracy.substring(0, 2)
+            else
+                history.accuracy!!.substring(0, 3)
+
+            (history.status + " (" + percent + "%)").also { tvStatus.text = it }
+
+            tvDate.text = history.createdAt!!.substring(0, 10)
 
             Glide.with(holder.itemView.context)
-                .load(history.photoUrl)
+                .load(history.image)
                 .override(100)
                 .into(ivImg)
 

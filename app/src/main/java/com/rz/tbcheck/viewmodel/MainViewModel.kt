@@ -1,7 +1,5 @@
 package com.rz.tbcheck.viewmodel
 
-import android.content.ContentValues
-import android.content.Context
 import android.graphics.Bitmap
 import android.os.Handler
 import android.os.Looper
@@ -17,7 +15,6 @@ import org.tensorflow.lite.support.image.ops.ResizeOp
 import org.tensorflow.lite.support.image.ops.ResizeWithCropOrPadOp
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
 import java.util.concurrent.Executors
-import kotlin.math.min
 
 class MainViewModel : ViewModel() {
 

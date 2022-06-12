@@ -1,48 +1,22 @@
 package com.rz.tbcheck.service
 
+import com.rz.tbcheck.data.ListHistoryItem
+import retrofit2.Call
+import retrofit2.http.Field
+import retrofit2.http.FormUrlEncoded
+import retrofit2.http.GET
+import retrofit2.http.POST
+
 interface ApiService {
-    /*@POST("login")
-    fun login(
-        @Body body: LoginBody
-    ): Call<LoginResponse>
+    @GET("crud")
+    fun getHistory(): Call<List<ListHistoryItem>>
 
-    @POST("register")
-    fun register(
-        @Body body: RegisterBody
-    ): Call<RegisterResponse>
-
-    @GET("stories")
-    fun getStories(
-        @Header("Authorization") authToken: String
-    ): Call<GetAllStoriesResponse>
-
-    @GET("stories")
-    fun getStoriesWithPaging(
-        @Header("Authorization") authToken: String,
-        @Query("page") page: Int,
-        @Query("size") size: Int
-    ): Call<GetAllStoriesResponse>
-
-    @GET("stories?location=1")
-    fun getStoriesWithLocation(
-        @Header("Authorization") authToken: String
-    ): Call<GetAllStoriesResponse>
-
-    @Multipart
-    @POST("stories")
-    fun addStory(
-        @Header("Authorization") authToken: String,
-        @Part file: MultipartBody.Part,
-        @Part("description") description: RequestBody,
-    ): Call<FileUploadResponse>
-
-    @Multipart
-    @POST("stories")
-    fun addStoryWithLocation(
-        @Header("Authorization") authToken: String,
-        @Part file: MultipartBody.Part,
-        @Part("description") description: RequestBody,
-        @Part("lat") lat: Float,
-        @Part("lon") lon: Float,
-    ): Call<FileUploadResponse>*/
+    @FormUrlEncoded
+    @POST("crud")
+    fun addHistory(
+        @Field("image") image: String,
+        @Field("accuracy") accuracy: String,
+        @Field("status") status: String,
+        @Field("description") description: String,
+    ): Call<ListHistoryItem>
 }
