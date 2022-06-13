@@ -151,9 +151,9 @@ class MainActivity : AppCompatActivity() {
 
                 getFile = myFile
                 bitmap = BitmapFactory.decodeFile(getFile?.path)
-                filePath = it.data?.data
+                filePath = Uri.fromFile(myFile)
 
-                Log.d(TAG, "masuk: ")
+                Log.d(TAG, "masuk: $filePath")
 
                 binding.ivImage.setImageBitmap(bitmap)
                 binding.tvDescChoose.visibility = View.GONE
@@ -164,6 +164,8 @@ class MainActivity : AppCompatActivity() {
         } else {
             if (it.data != null) {
                 filePath = it.data?.data
+
+                Log.d(TAG, "masuk2:  $filePath")
 
                 bitmap = if (Build.VERSION.SDK_INT < 28) {
                     MediaStore.Images.Media.getBitmap(

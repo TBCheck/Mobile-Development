@@ -46,7 +46,7 @@ class HistoryActivity : AppCompatActivity() {
     private fun setHistoryResult(stories: List<ListHistoryItem>) {
         list.clear()
         val listHistory = ArrayList<ListHistoryItem>()
-        for (history in stories) {
+        for (history in stories.sortedBy { it.id }.reversed()) {
             history.apply {
                 val getResult = ListHistoryItem(
                     id, image, accuracy, status, description, createdAt

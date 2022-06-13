@@ -45,7 +45,7 @@ class DetailHistoryActivity : AppCompatActivity() {
                 intent.getParcelableExtra<IntentSend>(INTENT_FROM1) as IntentSend
 
             accuracy = (dataIntent.accuracy * 100).toString()
-            val isTb = dataIntent.accuracy > 0.8
+            val isTb: Boolean = dataIntent.accuracy > 0.8
 
             binding.tvAccuracy.text = "${accuracy.substring(0, 4)}%"
             if (isTb) {
