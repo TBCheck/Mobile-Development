@@ -24,7 +24,9 @@ class HistoryActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         model.listHistory.observe(this) { listUser ->
-            setHistoryResult(listUser)
+            if (listUser != null) {
+                setHistoryResult(listUser)
+            }
         }
 
         model.isLoading.observe(this) {
@@ -63,6 +65,7 @@ class HistoryActivity : AppCompatActivity() {
         }
 
         setRecycler()
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
     }
 
     private fun setRecycler() {
@@ -80,5 +83,10 @@ class HistoryActivity : AppCompatActivity() {
 
     private fun setLoading(isLoading: Boolean) {
         binding.pbMain.visibility = if (isLoading) View.VISIBLE else View.GONE
+    }
+
+    override fun onSupportNavigateUp(): Boolean {
+        onBackPressed()
+        return true
     }
 }

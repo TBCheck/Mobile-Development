@@ -17,6 +17,7 @@ import com.rz.tbcheck.data.ListHistoryItem
 import com.rz.tbcheck.databinding.ActivityDetailHistoryBinding
 import com.rz.tbcheck.viewmodel.DetailHistoryViewModel
 import kotlinx.coroutines.*
+import java.text.SimpleDateFormat
 import java.util.*
 
 
@@ -54,6 +55,11 @@ class DetailHistoryActivity : AppCompatActivity() {
                 binding.tvStatus.text = "Normal"
             }
 
+            val sdf = SimpleDateFormat("yyyy-MM-dd")
+            val currentDate = sdf.format(Date())
+
+            binding.tvDate.text = currentDate
+
             filePath = dataIntent.filePath
             binding.ivImage.setImageURI(filePath)
         } else {
@@ -86,6 +92,7 @@ class DetailHistoryActivity : AppCompatActivity() {
         }
 
         setClick()
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
     }
 
     private fun setClick() {
@@ -125,6 +132,11 @@ class DetailHistoryActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    override fun onSupportNavigateUp(): Boolean {
+        onBackPressed()
+        return true
     }
 
     companion object {
